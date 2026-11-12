@@ -13,36 +13,55 @@ h1 { margin:0 0 8px; font-size:clamp(1.6rem,4vw,2.2rem); }
 .intro { margin:0 0 24px; color:#526460; }
 .panel { background:white; border:1px solid #dce7e4; border-radius:16px; padding:20px; margin:16px 0; box-shadow:0 3px 12px #163c3510; }
 h2 { margin:0 0 12px; font-size:1.2rem; }
+h3 { margin:16px 0 6px; font-size:1rem; }
 label { font-weight:600; }
-input[type=number] { width:90px; padding:10px; border:1px solid #a9bfba; border-radius:8px; font:inherit; }
+input[type=number], input[type=date], input[type=text] { padding:10px; border:1px solid #a9bfba; border-radius:8px; font:inherit; background:white; }
+input[type=number] { width:90px; }
+input[type=text] { width:min(260px,100%); }
 .hint { font-size:.9rem; color:#61716e; margin:6px 0 0; }
-.staff-list { display:grid; gap:12px; }
-.staff-row { display:grid; grid-template-columns:100px 1fr; gap:10px; align-items:start; padding:12px; border:1px solid #e0e9e6; border-radius:10px; }
-.staff-name { padding-top:3px; font-weight:700; }
+.inline { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; }
+.field { display:flex; flex-direction:column; gap:4px; }
+.staff-list { display:grid; gap:12px; margin-top:12px; }
+.staff-row { display:grid; grid-template-columns:150px 1fr; gap:10px; align-items:start; padding:12px; border:1px solid #e0e9e6; border-radius:10px; }
+.staff-head { display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+.staff-name { padding-top:3px; font-weight:700; word-break:break-all; }
 .days { display:flex; flex-wrap:wrap; gap:8px 12px; }
 .day-check { display:inline-flex; align-items:center; gap:5px; font-weight:400; white-space:nowrap; }
 input[type=checkbox] { width:18px; height:18px; accent-color:var(--main); }
+.date-off { margin-top:10px; padding-top:10px; border-top:1px dashed #d6e2df; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.chip { display:inline-flex; align-items:center; gap:4px; padding:3px 4px 3px 10px; background:var(--accent); border:1px solid #b9dcd5; border-radius:999px; font-size:.9rem; }
+.chip button { padding:0 7px; border-radius:999px; background:transparent; color:#4d6a65; font-size:1rem; line-height:1.5; }
 .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
 button { border:0; border-radius:10px; padding:12px 18px; font:inherit; font-weight:700; cursor:pointer; }
 button:focus-visible, input:focus-visible { outline:3px solid #75b9ad; outline-offset:2px; }
 .primary { color:white; background:var(--main); }
 .secondary { color:var(--main); background:var(--accent); border:1px solid #b9dcd5; }
+.small-btn { padding:8px 12px; font-size:.9rem; }
+.remove { color:var(--danger); background:#fdecec; border:1px solid #f0c4c4; }
 button:disabled { opacity:.45; cursor:not-allowed; }
 .notice { padding:12px 14px; background:var(--accent); border-radius:10px; margin-top:14px; }
 .error { color:var(--danger); font-weight:700; }
 .table-wrap { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; min-width:600px; }
-th,td { border:1px solid #d8e4e0; padding:10px 8px; text-align:center; }
-thead th { background:#eaf4f1; }
-tbody th { text-align:left; white-space:nowrap; background:#fafcfb; }
+table { width:100%; border-collapse:collapse; }
+th,td { border:1px solid #d8e4e0; padding:8px 6px; text-align:center; white-space:nowrap; }
+thead th { background:#eaf4f1; font-size:.9rem; }
+thead th .wd { display:block; font-weight:400; font-size:.8rem; color:#5d706c; }
+thead th.sat .wd { color:#1f5fa8; }
+thead th.sun .wd { color:var(--danger); }
+tbody th { text-align:left; background:#fafcfb; position:sticky; left:0; z-index:1; }
+thead th:first-child { position:sticky; left:0; z-index:2; }
 td.on { font-weight:800; color:var(--main); }
 td.off { color:#a0aaa7; }
+th.closed, td.closed { background:#e9eceb; color:#7a8683; }
 tfoot th,tfoot td { background:#f4f8f6; font-weight:700; }
+tfoot td.closed { background:#e9eceb; }
 .small { font-size:.88rem; color:#62716e; }
 @media(max-width:600px) {
  main { padding:18px 10px 32px; }
  .panel { padding:14px; }
  .staff-row { grid-template-columns:1fr; gap:6px; }
+ .staff-head { flex-direction:row; align-items:center; justify-content:space-between; }
  .staff-name { padding:0; }
 }
 </style>
@@ -50,18 +69,39 @@ tfoot th,tfoot td { background:#f4f8f6; font-weight:700; }
 <body>
 <main>
   <h1>シフト調整アプリ</h1>
-  <p class="intro">出られない曜日を選び、1日に必要な人数を決めて「シフトを作る」を押してください。</p>
+  <p class="intro">シフトを作る期間と1日に必要な人数を決め、お店の定休日とスタッフの希望休を入れて「シフトを作る」を押してください。</p>
 
   <section class="panel">
-    <h2>1. 1日に必要な人数</h2>
-    <label for="needed">必要な人数（人）</label>
-    <input id="needed" type="number" min="1" max="5" value="2">
-    <p class="hint">1日あたり何人に出勤してほしいかを入力します（1〜5人）。</p>
+    <h2>1. 期間と1日に必要な人数</h2>
+    <div class="inline">
+      <div class="field"><label for="start">開始日</label><input id="start" type="date"></div>
+      <div class="field"><label for="end">終了日</label><input id="end" type="date"></div>
+      <div class="field"><label for="needed">必要な人数（人）</label><input id="needed" type="number" min="1" max="20" value="2"></div>
+    </div>
+    <p class="hint">期間は最長62日です。必要な人数は、営業する日に何人に出勤してほしいかを入力します（1〜20人）。</p>
   </section>
 
   <section class="panel">
-    <h2>2. 出られない曜日（希望休）</h2>
-    <p class="hint">チェックを入れた曜日は、そのスタッフをシフトに入れません。</p>
+    <h2>2. お店の定休日</h2>
+    <h3>曜日で決める</h3>
+    <div id="closedWeekdays" class="days"></div>
+    <h3>日にちで決める</h3>
+    <div class="inline">
+      <input id="closedDateInput" type="date" aria-label="定休日にする日にち">
+      <button class="secondary small-btn" id="closedDateAdd">この日を休業日に追加</button>
+    </div>
+    <div id="closedDates" class="chips"></div>
+    <p class="hint">定休日にした日は、誰もシフトに入りません。</p>
+  </section>
+
+  <section class="panel">
+    <h2>3. スタッフと希望休</h2>
+    <div class="inline">
+      <input id="newStaffName" type="text" maxlength="20" placeholder="スタッフの名前" aria-label="追加するスタッフの名前">
+      <button class="primary small-btn" id="addStaff">スタッフを追加</button>
+    </div>
+    <p id="staffMsg" class="hint"></p>
+    <p class="hint">「出られない曜日」にチェックを入れると、その曜日はそのスタッフをシフトに入れません。特定の日だけ休みたいときは、「休みたい日」に日にちを追加します。</p>
     <div id="staffList" class="staff-list"></div>
     <div class="actions">
       <button class="primary" id="make">シフトを作る</button>
@@ -70,63 +110,241 @@ tfoot th,tfoot td { background:#f4f8f6; font-weight:700; }
   </section>
 
   <section class="panel">
-    <h2>3. シフト結果</h2>
-    <p class="small">「○」が出勤日です。人数が足りない日は、結果の下に赤い文字で表示します。</p>
+    <h2>4. シフト結果</h2>
+    <p class="small">「○」が出勤日、灰色の列が定休日です。人数が足りない日は、結果の下に赤い文字で表示します。</p>
     <div id="result" class="notice" role="status">まだシフトは作成されていません。</div>
     <div class="table-wrap" style="margin-top:14px">
       <table id="scheduleTable" aria-label="シフト結果">
-        <thead><tr><th>スタッフ</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th><th>出勤回数</th></tr></thead>
-        <tbody id="scheduleBody"><tr><td colspan="9">「シフトを作る」を押すと、ここに結果が表示されます。</td></tr></tbody>
+        <thead id="scheduleHead"></thead>
+        <tbody id="scheduleBody"><tr><td>「シフトを作る」を押すと、ここに結果が表示されます。</td></tr></tbody>
+        <tfoot id="scheduleFoot"></tfoot>
       </table>
     </div>
     <div class="actions">
       <button class="primary" id="save" disabled>CSVを保存</button>
     </div>
-    <p class="hint">CSVはExcelなどで開ける形式で保存します。</p>
+    <p class="hint">CSVはExcelなどで開ける形式で保存します。スタッフと希望休、定休日の入力内容は、このブラウザに保存されます（他の人や他のパソコンには共有されません）。</p>
   </section>
 </main>
 <script>
 (() => {
-  const names = ["スタッフA", "スタッフB", "スタッフC", "スタッフD", "スタッフE"];
-  const days = ["月", "火", "水", "木", "金", "土", "日"];
-  const staffList = document.getElementById("staffList");
-  const result = document.getElementById("result");
-  const body = document.getElementById("scheduleBody");
-  const saveButton = document.getElementById("save");
-  let latestSchedule = null;
-  let latestCounts = null;
-  let latestNeeded = 2;
+  const DAYS = ["月", "火", "水", "木", "金", "土", "日"];
+  const KEY = "shift_app_v1";
+  const MAX_DAYS = 62, MAX_STAFF = 30, MAX_NEEDED = 20;
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, "0");
+  const toKey = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const parseKey = k => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k || "");
+    if (!m) return null;
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return toKey(d) === k ? d : null;
+  };
+  const weekdayOf = d => (d.getDay() + 6) % 7;
+  const shortLabel = d => (d.getMonth() + 1) + "/" + d.getDate();
+  const fullLabel = d => shortLabel(d) + "（" + DAYS[weekdayOf(d)] + "）";
 
-  names.forEach((name, i) => {
-    const row = document.createElement("div");
-    row.className = "staff-row";
-    const title = document.createElement("div");
-    title.className = "staff-name";
-    title.textContent = name;
-    const dayBox = document.createElement("div");
-    dayBox.className = "days";
-    days.forEach((day, d) => {
+  function newStaff(name) {
+    return {name, offWeekdays: Array(7).fill(false), offDates: []};
+  }
+
+  function defaultState() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const add = (7 - weekdayOf(today)) % 7 || 7;
+    const start = new Date(today);
+    start.setDate(today.getDate() + add);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return {
+      needed: 2,
+      start: toKey(start),
+      end: toKey(end),
+      closedWeekdays: Array(7).fill(false),
+      closedDates: [],
+      staff: ["スタッフA", "スタッフB", "スタッフC", "スタッフD", "スタッフE"].map(newStaff)
+    };
+  }
+
+  const validDates = list => Array.isArray(list)
+    ? Array.from(new Set(list.filter(k => parseKey(k)))).sort()
+    : [];
+  const sevenBools = list => Array.isArray(list) && list.length === 7 ? list.map(Boolean) : Array(7).fill(false);
+
+  function loadState() {
+    const base = defaultState();
+    try {
+      const raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (!raw || !Array.isArray(raw.staff)) return base;
+      const staff = raw.staff.slice(0, MAX_STAFF)
+        .filter(s => s && typeof s.name === "string" && s.name.trim() && s.name.length <= 20)
+        .map(s => ({name: s.name, offWeekdays: sevenBools(s.offWeekdays), offDates: validDates(s.offDates)}));
+      const needed = Number(raw.needed);
+      return {
+        needed: Number.isInteger(needed) && needed >= 1 && needed <= MAX_NEEDED ? needed : base.needed,
+        start: parseKey(raw.start) ? raw.start : base.start,
+        end: parseKey(raw.end) ? raw.end : base.end,
+        closedWeekdays: sevenBools(raw.closedWeekdays),
+        closedDates: validDates(raw.closedDates),
+        staff
+      };
+    } catch (e) {
+      return base;
+    }
+  }
+
+  function saveState() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 保存できなくても動く */ }
+  }
+
+  const state = loadState();
+  const result = $("result");
+  const saveButton = $("save");
+  let latest = null;
+
+  function resetResult() {
+    latest = null;
+    saveButton.disabled = true;
+    result.className = "notice";
+    result.textContent = "入力が変わりました。「シフトを作る」を押してください。";
+    $("scheduleHead").replaceChildren();
+    $("scheduleFoot").replaceChildren();
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.textContent = "「シフトを作る」を押すと、ここに結果が表示されます。";
+    tr.appendChild(td);
+    $("scheduleBody").replaceChildren(tr);
+  }
+
+  function changed() {
+    saveState();
+    resetResult();
+  }
+
+  function weekdayChecks(values, labelPrefix, onChange) {
+    const box = document.createElement("div");
+    box.className = "days";
+    DAYS.forEach((day, d) => {
       const label = document.createElement("label");
       label.className = "day-check";
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.className = "unavailable";
-      checkbox.dataset.staff = String(i);
-      checkbox.dataset.day = String(d);
-      checkbox.setAttribute("aria-label", name + "の" + day + "曜日の希望休");
-      label.append(checkbox, document.createTextNode(day + "曜"));
-      dayBox.appendChild(label);
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = values[d];
+      cb.setAttribute("aria-label", labelPrefix + day + "曜日");
+      cb.addEventListener("change", () => { values[d] = cb.checked; onChange(); });
+      label.append(cb, document.createTextNode(day + "曜"));
+      box.appendChild(label);
     });
-    row.append(title, dayBox);
-    staffList.appendChild(row);
-  });
+    return box;
+  }
 
-  function getUnavailable() {
-    const unavailable = Array.from({length: names.length}, () => Array(7).fill(false));
-    document.querySelectorAll(".unavailable").forEach(cb => {
-      unavailable[Number(cb.dataset.staff)][Number(cb.dataset.day)] = cb.checked;
+  function dateChips(list, labelPrefix, onRemove) {
+    const box = document.createElement("div");
+    box.className = "chips";
+    list.forEach(key => {
+      const date = parseKey(key);
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      chip.append(document.createTextNode(fullLabel(date)));
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "×";
+      btn.setAttribute("aria-label", labelPrefix + fullLabel(date) + "を取り消す");
+      btn.addEventListener("click", () => onRemove(key));
+      chip.appendChild(btn);
+      box.appendChild(chip);
     });
-    return unavailable;
+    return box;
+  }
+
+  function addDate(list, key) {
+    if (!parseKey(key)) return false;
+    if (!list.includes(key)) {
+      list.push(key);
+      list.sort();
+    }
+    return true;
+  }
+
+  function renderClosed() {
+    const weekBox = $("closedWeekdays");
+    weekBox.replaceChildren(...weekdayChecks(state.closedWeekdays, "定休日：", changed).children);
+    const dateBox = $("closedDates");
+    dateBox.replaceChildren(...dateChips(state.closedDates, "定休日の", key => {
+      state.closedDates = state.closedDates.filter(k => k !== key);
+      renderClosed();
+      changed();
+    }).children);
+  }
+
+  function renderStaff() {
+    const list = $("staffList");
+    list.replaceChildren();
+    if (!state.staff.length) {
+      const p = document.createElement("p");
+      p.className = "hint";
+      p.textContent = "スタッフがいません。名前を入れて「スタッフを追加」を押してください。";
+      list.appendChild(p);
+      return;
+    }
+    state.staff.forEach(staff => {
+      const row = document.createElement("div");
+      row.className = "staff-row";
+
+      const head = document.createElement("div");
+      head.className = "staff-head";
+      const name = document.createElement("div");
+      name.className = "staff-name";
+      name.textContent = staff.name;
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "remove small-btn";
+      del.textContent = "削除";
+      del.setAttribute("aria-label", staff.name + "を削除");
+      del.addEventListener("click", () => {
+        if (!confirm(staff.name + "さんを削除しますか？")) return;
+        state.staff.splice(state.staff.indexOf(staff), 1);
+        renderStaff();
+        changed();
+      });
+      head.append(name, del);
+
+      const body = document.createElement("div");
+      const wLabel = document.createElement("div");
+      wLabel.className = "small";
+      wLabel.textContent = "出られない曜日";
+      body.append(wLabel, weekdayChecks(staff.offWeekdays, staff.name + "の希望休：", changed));
+
+      const dateOff = document.createElement("div");
+      dateOff.className = "date-off";
+      const dLabel = document.createElement("div");
+      dLabel.className = "small";
+      dLabel.textContent = "休みたい日（日にち指定）";
+      const inline = document.createElement("div");
+      inline.className = "inline";
+      const input = document.createElement("input");
+      input.type = "date";
+      input.setAttribute("aria-label", staff.name + "の休みたい日");
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "secondary small-btn";
+      add.textContent = "この日を休みに追加";
+      add.addEventListener("click", () => {
+        if (!addDate(staff.offDates, input.value)) return;
+        renderStaff();
+        changed();
+      });
+      inline.append(input, add);
+      dateOff.append(dLabel, inline, dateChips(staff.offDates, staff.name + "の", key => {
+        staff.offDates = staff.offDates.filter(k => k !== key);
+        renderStaff();
+        changed();
+      }));
+      body.appendChild(dateOff);
+
+      row.append(head, body);
+      list.appendChild(row);
+    });
   }
 
   function shuffle(arr) {
@@ -137,69 +355,139 @@ tfoot th,tfoot td { background:#f4f8f6; font-weight:700; }
     return arr;
   }
 
-  function buildCandidate(unavailable, needed) {
-    const schedule = Array.from({length: names.length}, () => Array(7).fill(false));
-    const counts = Array(names.length).fill(0);
+  function buildCandidate(avail, days, needed) {
+    const n = avail.length;
+    const schedule = Array.from({length: n}, () => Array(days.length).fill(false));
+    const counts = Array(n).fill(0);
     let shortage = 0;
-    // 各試行で曜日の順番を変え、希望休を守りながら不足が出にくい組み合わせを探す
-    const dayOrder = shuffle([0,1,2,3,4,5,6]);
-    for (const d of dayOrder) {
+    // 各試行で日の順番を変え、希望休と定休日を守りながら不足が出にくい組み合わせを探す
+    const order = shuffle(days.map((_, i) => i).filter(i => !days[i].closed));
+    for (const i of order) {
       const eligible = [];
-      for (let s = 0; s < names.length; s++) {
-        if (!unavailable[s][d]) eligible.push(s);
+      for (let s = 0; s < n; s++) {
+        if (avail[s][i]) eligible.push(s);
       }
       shuffle(eligible);
-      eligible.sort((a,b) => counts[a] - counts[b]);
+      eligible.sort((a, b) => counts[a] - counts[b]);
       const chosen = eligible.slice(0, needed);
       chosen.forEach(s => {
-        schedule[s][d] = true;
+        schedule[s][i] = true;
         counts[s]++;
       });
       shortage += Math.max(0, needed - chosen.length);
     }
     const min = Math.min(...counts);
     const max = Math.max(...counts);
-    const sumSquares = counts.reduce((sum, n) => sum + n*n, 0);
+    const sumSquares = counts.reduce((sum, c) => sum + c * c, 0);
     // 人数不足を最優先で避け、次に出勤回数の偏りを小さくする
     const score = shortage * 100000 + (max - min) * 100 + sumSquares;
     return {schedule, counts, shortage, score};
   }
 
+  function showError(message) {
+    result.className = "notice error";
+    result.textContent = message;
+    saveButton.disabled = true;
+    latest = null;
+  }
+
   function createSchedule() {
-    const neededInput = document.getElementById("needed");
-    const needed = Number(neededInput.value);
-    if (!Number.isInteger(needed) || needed < 1 || needed > 5) {
-      result.className = "notice error";
-      result.textContent = "必要な人数は1〜5の整数で入力してください。";
-      saveButton.disabled = true;
-      latestSchedule = null;
+    const needed = Number($("needed").value);
+    if (!Number.isInteger(needed) || needed < 1 || needed > MAX_NEEDED) {
+      showError("必要な人数は1〜" + MAX_NEEDED + "の整数で入力してください。");
       return;
     }
-    const unavailable = getUnavailable();
+    const startDate = parseKey($("start").value);
+    const endDate = parseKey($("end").value);
+    if (!startDate || !endDate) {
+      showError("開始日と終了日を入力してください。");
+      return;
+    }
+    if (endDate < startDate) {
+      showError("終了日は、開始日と同じか、それより後の日にちにしてください。");
+      return;
+    }
+    const length = Math.round((endDate - startDate) / 86400000) + 1;
+    if (length > MAX_DAYS) {
+      showError("期間は" + MAX_DAYS + "日以内にしてください（今の期間は" + length + "日です）。");
+      return;
+    }
+    if (!state.staff.length) {
+      showError("スタッフを1人以上追加してください。");
+      return;
+    }
+    state.needed = needed;
+    state.start = $("start").value;
+    state.end = $("end").value;
+    saveState();
+
+    const days = [];
+    for (let i = 0; i < length; i++) {
+      const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+      const wd = weekdayOf(date);
+      const key = toKey(date);
+      days.push({date, key, wd, closed: state.closedWeekdays[wd] || state.closedDates.includes(key)});
+    }
+    if (days.every(d => d.closed)) {
+      showError("この期間は、すべて定休日です。期間か定休日を見直してください。");
+      return;
+    }
+    const avail = state.staff.map(s => days.map(d => !s.offWeekdays[d.wd] && !s.offDates.includes(d.key)));
+
     let best = null;
     for (let i = 0; i < 1200; i++) {
-      const candidate = buildCandidate(unavailable, needed);
+      const candidate = buildCandidate(avail, days, needed);
       if (!best || candidate.score < best.score) best = candidate;
       if (best.shortage === 0 && Math.max(...best.counts) - Math.min(...best.counts) <= 1) break;
     }
-    latestSchedule = best.schedule;
-    latestCounts = best.counts;
-    latestNeeded = needed;
-    render(best, needed);
+    latest = {days, names: state.staff.map(s => s.name), schedule: best.schedule, counts: best.counts, needed};
+    render();
     saveButton.disabled = false;
   }
 
-  function render(candidate, needed) {
+  function dailyCountsOf(l) {
+    return l.days.map((_, i) => l.schedule.reduce((sum, row) => sum + (row[i] ? 1 : 0), 0));
+  }
+
+  function render() {
+    const l = latest;
+    const head = $("scheduleHead"), body = $("scheduleBody"), foot = $("scheduleFoot");
+    head.replaceChildren();
     body.replaceChildren();
-    names.forEach((name, s) => {
+    foot.replaceChildren();
+
+    const hr = document.createElement("tr");
+    const h0 = document.createElement("th");
+    h0.textContent = "スタッフ";
+    hr.appendChild(h0);
+    l.days.forEach(d => {
+      const th = document.createElement("th");
+      th.scope = "col";
+      th.className = (d.closed ? "closed " : "") + (d.wd === 5 ? "sat" : d.wd === 6 ? "sun" : "");
+      th.append(document.createTextNode(shortLabel(d.date)));
+      const wd = document.createElement("span");
+      wd.className = "wd";
+      wd.textContent = DAYS[d.wd] + (d.closed ? "・休業" : "");
+      th.appendChild(wd);
+      hr.appendChild(th);
+    });
+    const hc = document.createElement("th");
+    hc.textContent = "出勤回数";
+    hr.appendChild(hc);
+    head.appendChild(hr);
+
+    l.names.forEach((name, s) => {
       const tr = document.createElement("tr");
       const th = document.createElement("th");
       th.scope = "row";
       th.textContent = name;
       tr.appendChild(th);
-      days.forEach((day, d) => {
+      l.days.forEach((d, i) => {
         const td = document.createElement("td");
-        if (candidate.schedule[s][d]) {
+        if (d.closed) {
+          td.textContent = "休";
+          td.className = "closed";
+        } else if (l.schedule[s][i]) {
           td.textContent = "○";
           td.className = "on";
         } else {
@@ -209,52 +497,58 @@ tfoot th,tfoot td { background:#f4f8f6; font-weight:700; }
         tr.appendChild(td);
       });
       const countTd = document.createElement("td");
-      countTd.textContent = candidate.counts[s] + "回";
+      countTd.textContent = l.counts[s] + "回";
       tr.appendChild(countTd);
       body.appendChild(tr);
     });
-    const dailyCounts = days.map((_, d) => candidate.schedule.reduce((sum, staff) => sum + (staff[d] ? 1 : 0), 0));
-    const foot = document.createElement("tr");
-    const footHead = document.createElement("th");
-    footHead.scope = "row";
-    footHead.textContent = "出勤人数";
-    foot.appendChild(footHead);
-    dailyCounts.forEach((count, d) => {
-      const td = document.createElement("td");
-      td.textContent = count + "人";
-      if (count < needed) td.className = "error";
-      foot.appendChild(td);
-    });
-    const total = document.createElement("td");
-    total.textContent = "—";
-    foot.appendChild(total);
-    body.appendChild(foot);
 
-    result.className = "notice";
-    const shortages = days.map((day, d) => ({day, count:dailyCounts[d]})).filter(x => x.count < needed);
+    const daily = dailyCountsOf(l);
+    const fr = document.createElement("tr");
+    const fh = document.createElement("th");
+    fh.scope = "row";
+    fh.textContent = "出勤人数";
+    fr.appendChild(fh);
+    l.days.forEach((d, i) => {
+      const td = document.createElement("td");
+      if (d.closed) {
+        td.textContent = "—";
+        td.className = "closed";
+      } else {
+        td.textContent = daily[i] + "人";
+        if (daily[i] < l.needed) td.className = "error";
+      }
+      fr.appendChild(td);
+    });
+    fr.appendChild(document.createElement("td")).textContent = "—";
+    foot.appendChild(fr);
+
+    const shortages = l.days.map((d, i) => ({d, count: daily[i]})).filter(x => !x.d.closed && x.count < l.needed);
     if (shortages.length) {
       result.className = "notice error";
-      result.textContent = "人数が足りない日があります：" + shortages.map(x => x.day + "曜日（" + x.count + "人／必要" + needed + "人）").join("、") + "。希望休を見直すか、必要人数を減らしてください。";
+      result.textContent = "人数が足りない日があります：" + shortages.map(x => fullLabel(x.d.date) + "（" + x.count + "人／必要" + l.needed + "人）").join("、") + "。希望休や定休日を見直すか、必要人数を減らしてください。";
     } else {
-      const min = Math.min(...candidate.counts), max = Math.max(...candidate.counts);
-      result.textContent = "シフトを作成しました。希望休は反映済みです。出勤回数：" + min + "〜" + max + "回。";
+      const min = Math.min(...l.counts), max = Math.max(...l.counts);
+      result.className = "notice";
+      result.textContent = "シフトを作成しました。希望休と定休日は反映済みです。出勤回数：" + min + "〜" + max + "回。";
     }
   }
 
   function saveCsv() {
-    if (!latestSchedule) return;
-    const rows = [["スタッフ", ...days.map(d => d + "曜日"), "出勤回数"]];
-    names.forEach((name, s) => {
-      rows.push([name, ...latestSchedule[s].map(on => on ? "○" : ""), latestCounts[s]]);
+    if (!latest) return;
+    const l = latest;
+    const dateHead = l.days.map(d => d.date.getFullYear() + "/" + shortLabel(d.date) + "(" + DAYS[d.wd] + ")");
+    const rows = [["スタッフ", ...dateHead, "出勤回数"]];
+    l.names.forEach((name, s) => {
+      rows.push([name, ...l.days.map((d, i) => d.closed ? "休業" : (l.schedule[s][i] ? "○" : "")), l.counts[s]]);
     });
-    const dailyCounts = days.map((_, d) => latestSchedule.reduce((sum, staff) => sum + (staff[d] ? 1 : 0), 0));
-    rows.push(["出勤人数", ...dailyCounts, ""]);
-    rows.push(["必要人数", ...days.map(() => latestNeeded), ""]);
-    const csv = "\uFEFF" + rows.map(row => row.map(value => {
+    const daily = dailyCountsOf(l);
+    rows.push(["出勤人数", ...l.days.map((d, i) => d.closed ? "休業" : daily[i]), ""]);
+    rows.push(["必要人数", ...l.days.map(d => d.closed ? "休業" : l.needed), ""]);
+    const csv = "﻿" + rows.map(row => row.map(value => {
       const text = String(value);
       return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
     }).join(",")).join("\r\n");
-    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -265,11 +559,61 @@ tfoot th,tfoot td { background:#f4f8f6; font-weight:700; }
     URL.revokeObjectURL(url);
   }
 
-  document.getElementById("make").addEventListener("click", createSchedule);
-  document.getElementById("clear").addEventListener("click", () => {
-    document.querySelectorAll(".unavailable").forEach(cb => cb.checked = false);
+  function addStaff() {
+    const input = $("newStaffName");
+    const msg = $("staffMsg");
+    const name = input.value.trim();
+    msg.className = "hint";
+    msg.textContent = "";
+    if (!name) {
+      msg.className = "hint error";
+      msg.textContent = "スタッフの名前を入力してください。";
+      return;
+    }
+    if (state.staff.some(s => s.name === name)) {
+      msg.className = "hint error";
+      msg.textContent = "同じ名前のスタッフがいます。区別できる名前にしてください。";
+      return;
+    }
+    if (state.staff.length >= MAX_STAFF) {
+      msg.className = "hint error";
+      msg.textContent = "スタッフは" + MAX_STAFF + "人までです。";
+      return;
+    }
+    state.staff.push(newStaff(name));
+    input.value = "";
+    renderStaff();
+    changed();
+  }
+
+  $("start").value = state.start;
+  $("end").value = state.end;
+  $("needed").value = state.needed;
+  [$("start"), $("end"), $("needed")].forEach(el => el.addEventListener("change", () => {
+    state.needed = Number($("needed").value) || state.needed;
+    if (parseKey($("start").value)) state.start = $("start").value;
+    if (parseKey($("end").value)) state.end = $("end").value;
+    changed();
+  }));
+  $("closedDateAdd").addEventListener("click", () => {
+    if (!addDate(state.closedDates, $("closedDateInput").value)) return;
+    renderClosed();
+    changed();
+  });
+  $("addStaff").addEventListener("click", addStaff);
+  $("newStaffName").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); addStaff(); }
+  });
+  $("make").addEventListener("click", createSchedule);
+  $("clear").addEventListener("click", () => {
+    state.staff.forEach(s => { s.offWeekdays = Array(7).fill(false); s.offDates = []; });
+    renderStaff();
+    changed();
   });
   saveButton.addEventListener("click", saveCsv);
+
+  renderClosed();
+  renderStaff();
 })();
 </script>
 </body>
